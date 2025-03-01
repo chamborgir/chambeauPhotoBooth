@@ -170,7 +170,7 @@ const PhotoBooth = () => {
         ctx.fillText(
             "ChamBeau PhotoBooth",
             canvas.width / 2,
-            titleHeight / 2 + 10
+            titleHeight / 2 + 30
         );
 
         // Draw date at the bottom
@@ -182,7 +182,7 @@ const PhotoBooth = () => {
             canvas.height - footerHeight / 2
         );
 
-        // Load and draw each image onto the strip canvas
+        //load and draw each image onto the strip canvas
         const loadImages = async () => {
             for (let i = 0; i < capturedImages.length; i++) {
                 const img = new Image();
@@ -192,7 +192,7 @@ const PhotoBooth = () => {
                         const yPos =
                             titleHeight + padding + i * (photoHeight + margin);
 
-                        // Draw white border/frame
+                        //draw white border/frame
                         ctx.fillStyle = "white";
                         ctx.fillRect(
                             padding - 3,
@@ -215,7 +215,7 @@ const PhotoBooth = () => {
                 });
             }
 
-            // Generate the final strip URL
+            //Generate the final strip URL
             setStripImageUrl(canvas.toDataURL("image/png"));
         };
 
