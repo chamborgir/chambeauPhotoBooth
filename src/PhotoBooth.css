@@ -1,0 +1,313 @@
+/* Import fancy fonts */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Montserrat:wght@400;700&display=swap');
+
+
+body {
+    background-color: #ffffff;
+background-image: linear-gradient(315deg, #ffffff 0%, #f47b7b 74%);
+}
+/* 
+body {
+    background-color: #fe7bb0;
+background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
+} */
+
+/* Photo Booth Main Container */
+.photobooth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.photobooth-title {
+    color: #ffffff;
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Pacifico', cursive;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.photobooth-panel {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    overflow: hidden;
+    padding: 20px;
+}
+
+/* Camera container */
+.camera-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.video-feed {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Flash effect */
+.flash-active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 0.8;
+    animation: flash 300ms ease-out;
+    pointer-events: none;
+}
+
+@keyframes flash {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+/* Countdown overlay */
+.countdown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.countdown-number {
+    font-size: 120px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Filter buttons */
+.filter-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-button {
+    padding: 8px 16px;
+    background-color: #e9ecef;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.filter-button:hover {
+    background-color: #dee2e6;
+    transform: translateY(-2px);
+}
+
+.filter-active {
+    background: linear-gradient(45deg, #f857a6, #ff5858);
+    color: white;
+}
+
+/* Action buttons */
+.start-button, 
+.cancel-button, 
+.new-strip-button, 
+.save-button, 
+.print-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    margin: 5px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.start-button {
+    background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+    color: white;
+    font-size: 16px;
+}
+
+.start-button:hover {
+    background: linear-gradient(45deg, #ff8a8e, #f9c0b4);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+}
+
+.cancel-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.cancel-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+}
+
+.capture-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.capture-status p {
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #555;
+}
+
+/* Results container */
+.results-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.strip-title {
+    color: #343a40;
+    margin-bottom: 20px;
+    text-align: center;
+    font-family: 'Pacifico', cursive;
+    font-size: 1.8rem;
+}
+
+.photo-strip {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    width: 100%;
+    height: auto;
+    max-width: 340px; /* Increased to prevent cutting */
+}
+
+.strip-image {
+    width: 100%;
+    height: auto;
+    max-height: 600px; /* Increased to show full strip */
+    object-fit: contain;
+    border: 8px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+.strip-container {
+    position: relative;
+    padding: 10px;
+    text-align: center;
+    width: 100%;
+}
+
+.strip-label {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-family: 'Pacifico', cursive;
+    color: #ff6b6b;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.new-strip-button {
+    background: linear-gradient(45deg, #a18cd1, #fbc2eb);
+    color: white;
+}
+
+.new-strip-button:hover {
+    background: linear-gradient(45deg, #917ac0, #fab9e7);
+    transform: translateY(-3px);
+}
+
+.save-button {
+    background: linear-gradient(45deg, #84fab0, #8fd3f4);
+    color: white;
+}
+
+.save-button:hover {
+    background: linear-gradient(45deg, #74eaa0, #7fc3e4);
+    transform: translateY(-3px);
+}
+
+.print-button {
+    background: linear-gradient(45deg, #ff9a9e, #fecfef);
+    color: white;
+}
+
+.print-button:hover {
+    background: linear-gradient(45deg, #ff8a8e, #fdbfdf);
+    transform: translateY(-3px);
+}
+
+/* Hidden canvases */
+.hidden-canvas {
+    display: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .photobooth-panel {
+        padding: 15px;
+    }
+    
+    .countdown-number {
+        font-size: 80px;
+    }
+    
+    .filter-buttons {
+        gap: 5px;
+    }
+    
+    .filter-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+}
