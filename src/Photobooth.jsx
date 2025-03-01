@@ -14,6 +14,10 @@ const PhotoBooth = () => {
     const canvasRef = useRef(null);
     const stripCanvasRef = useRef(null);
 
+    //PRINTING MODAL
+    const [showPrintModal, setShowPrintModal] = useState(false);
+    const [printTwoStrips, setPrintTwoStrips] = useState(false);
+
     // Available filters
     const filters = [
         { name: "None", value: "none" },
@@ -273,9 +277,8 @@ const PhotoBooth = () => {
             document.body.removeChild(link);
         }
     };
-
-    // Print the photo strip
-    const printPhotoStrip = () => {
+    // Print the photo strip with user choice for 1 or 2 strips
+    const printPhotoStrip = (printTwoStrips) => {
         if (stripImageUrl) {
             const printWindow = window.open("", "_blank");
 
@@ -300,36 +303,33 @@ const PhotoBooth = () => {
                                     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
                                     border-radius: 10px;
                                     text-align: center;
+                                    display: ${
+                                        printTwoStrips ? "flex" : "block"
+                                    };
+                                    gap: 10px;
                                 }
-                                h1 {
-                                    font-family: 'Pacifico', cursive;
-                                    color: #ff6b6b;
-                                    margin-bottom: 20px;
-                                }
-                                img {
+                                .photo {
                                     max-height: 85vh;
-                                    max-width: 100%;
+                                    max-width: ${
+                                        printTwoStrips ? "48%" : "100%"
+                                    };
                                     border: 8px solid white;
                                     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
                                 }
                                 @media print {
-                                    body { 
-                                        background: none; 
-                                    }
-                                    .print-container {
-                                        box-shadow: none;
-                                        padding: 0;
-                                    }
-                                    h1 {
-                                        display: none;
-                                    }
+                                    body { background: none; }
+                                    .print-container { box-shadow: none; padding: 0; }
                                 }
                             </style>
                         </head>
                         <body>
                             <div class="print-container">
-                                <h1>ChamBeau PhotoBooth</h1>
-                                <img src="${stripImageUrl}" />
+                                <img class="photo" src="${stripImageUrl}" />
+                                ${
+                                    printTwoStrips
+                                        ? `<img class="photo" src="${stripImageUrl}" />`
+                                        : ""
+                                }
                             </div>
                             <script>
                                 window.onload = function() {
@@ -350,6 +350,13 @@ const PhotoBooth = () => {
     // Apply a different filter
     const changeFilter = (newFilter) => {
         setFilter(newFilter);
+    };
+
+    //PRINT FUNCTION
+    const handlePrint = (twoStrips) => {
+        setPrintTwoStrips(twoStrips);
+        setShowPrintModal(false);
+        printPhotoStrip(twoStrips);
     };
 
     return (
@@ -448,7 +455,7 @@ const PhotoBooth = () => {
                                 Save Strip
                             </button>
                             <button
-                                onClick={printPhotoStrip}
+                                onClick={() => setShowPrintModal(true)}
                                 className="print-button"
                             >
                                 Print Strip
@@ -457,6 +464,23 @@ const PhotoBooth = () => {
                     </div>
                 )}
             </div>
+
+            {showPrintModal && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <p>Select Print Option</p>
+                        <button onClick={() => handlePrint(false)}>
+                            Print 1 Strip
+                        </button>
+                        <button onClick={() => handlePrint(true)}>
+                            Print 2 Strips
+                        </button>
+                        <button onClick={() => setShowPrintModal(false)}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Hidden canvas used for capturing photos */}
             <canvas ref={canvasRef} className="hidden-canvas" />
