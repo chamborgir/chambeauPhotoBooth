@@ -34,6 +34,7 @@ const PhotoBooth = () => {
                 const mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: false,
+                    mirrored: true,
                 });
                 setStream(mediaStream);
                 if (videoRef.current) {
@@ -67,7 +68,7 @@ const PhotoBooth = () => {
 
         if (countdown === null) {
             // Start the countdown for the first or next photo
-            setCountdown(5);
+            setCountdown(4);
         }
 
         if (countdown > 0) {
@@ -80,7 +81,7 @@ const PhotoBooth = () => {
             // Take photo when countdown reaches 0
             capturePhoto();
             setPhotosTaken(photosTaken + 1);
-            setCountdown(photosTaken < 3 ? 5 : null); // Reset countdown if more photos needed
+            setCountdown(photosTaken < 3 ? 4 : null); // Reset countdown if more photos needed
         }
     }, [isCapturing, countdown, photosTaken]);
 
@@ -96,6 +97,7 @@ const PhotoBooth = () => {
         if (flashActive) {
             const timer = setTimeout(() => {
                 setFlashActive(false);
+                console.log("flash false");
             }, 300); // Flash duration
             return () => clearTimeout(timer);
         }
@@ -106,6 +108,7 @@ const PhotoBooth = () => {
         if (videoRef.current && canvasRef.current) {
             // Activate flash effect
             setFlashActive(true);
+            console.log("flash true");
 
             const video = videoRef.current;
             const canvas = canvasRef.current;
