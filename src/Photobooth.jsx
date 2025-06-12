@@ -174,11 +174,11 @@ const PhotoBooth = () => {
         ctx.fillStyle = "white";
         ctx.font = "bold 24px Pacifico, cursive";
         ctx.textAlign = "center";
-        ctx.fillText(
-            "ChamBeau PhotoBooth",
-            canvas.width / 2,
-            titleHeight / 2 + 30
-        );
+        // ctx.fillText(
+        //     "ChamBeau PhotoBooth",
+        //     canvas.width / 2,
+        //     titleHeight / 2 + 30
+        // );
 
         // Draw date at the bottom
         const currentDate = new Date().toLocaleDateString();
@@ -364,7 +364,10 @@ const PhotoBooth = () => {
 
     return (
         <div className="photobooth-container">
-            <h1 className="photobooth-title">ChamBeau PhotoBooth</h1>
+            <h1 className="photobooth-title">
+                <span className="cham">Cham</span>
+                <span className="beau">Beau</span> PhotoBooth
+            </h1>
 
             <div className="photobooth-panel">
                 {capturedImages.length < 4 ? (
@@ -430,8 +433,6 @@ const PhotoBooth = () => {
                 ) : (
                     // Display the photo strip
                     <div className="results-container">
-                        <h2 className="strip-title">Your Fabulous Photos</h2>
-
                         <div className="photo-strip">
                             {stripImageUrl && (
                                 <div className="strip-container">

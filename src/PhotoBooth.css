@@ -2,24 +2,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Montserrat:wght@400;700&display=swap');
 
 
-body {
+
+html {
+    height: 100%;
     background-color: #ffffff;
-background-image: linear-gradient(315deg, #ffffff 0%, #f47b7b 74%);
+    background-image: linear-gradient(315deg, #ffffff 0%, #f47b7b 74%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
 }
+
+
+
 /* 
 body {
     background-color: #fe7bb0;
 background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
 } */
 
+
+.cham {
+    color: lightblue;
+}
+
+.beau {
+    color: lightyellow  ;
+}
+
 /* MAIN CONTAINER */
-.photobooth-container {
+.photobooth-container-HIDDEN {
     display: flex;
     flex-direction: column;
     align-items: center;
     max-width: 800px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 10px;
     font-family: 'Montserrat', sans-serif;
     background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
     border-radius: 15px;
@@ -39,7 +56,6 @@ background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
     background-color: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    width: 100%;
     overflow: hidden;
     padding: 20px;
 }
