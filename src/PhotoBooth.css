@@ -241,10 +241,8 @@ background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
 
 .strip-image {
     width: 100%;
-    max-width: 640px;
-    display: block;
     height: auto;
-    aspect-ratio: 4 / 3; /* forces 640x480 or 320x240 aspect */
+    max-height: 1000px; /* Increased to show full strip */
     object-fit: contain;
     border: 8px solid white;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
