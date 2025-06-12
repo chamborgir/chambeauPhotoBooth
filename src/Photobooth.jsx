@@ -115,8 +115,8 @@ const PhotoBooth = () => {
             const context = canvas.getContext("2d");
 
             // Set canvas dimensions to match video
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.clientWidth;
+            canvas.height = video.clientHeight;
 
             // Draw the video frame to the canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
