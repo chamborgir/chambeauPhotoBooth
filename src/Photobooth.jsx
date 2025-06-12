@@ -174,11 +174,11 @@ const PhotoBooth = () => {
         ctx.fillStyle = "white";
         ctx.font = "bold 24px Pacifico, cursive";
         ctx.textAlign = "center";
-        // ctx.fillText(
-        //     "ChamBeau PhotoBooth",
-        //     canvas.width / 2,
-        //     titleHeight / 2 + 30
-        // );
+        ctx.fillText(
+            "ChamBeau PhotoBooth",
+            canvas.width / 2,
+            titleHeight / 2 + 30
+        );
 
         // Draw date at the bottom
         const currentDate = new Date().toLocaleDateString();

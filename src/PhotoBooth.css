@@ -79,10 +79,9 @@ background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
 }
 
 .video-feed {
-    width: 100%;
-    height: auto;
     display: block;
     transform: scaleX(-1);
+    object-fit: cover;
 }
 
 /* Flash effect */
@@ -368,6 +367,12 @@ background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
         padding: 15px;
     }
     
+     .video-container,
+  .video-feed {
+    width: 320px;
+    height: 240px;
+  }
+
     .countdown-number {
         font-size: 80px;
     }
@@ -381,3 +386,7 @@ background-image: linear-gradient(315deg, #fe7bb0 0%, #ff748b 74%);
         font-size: 12px;
     }
 }
+
+
+
+
