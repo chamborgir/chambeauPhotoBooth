@@ -118,16 +118,53 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // Set canvas template size strictly to raw camera inputs
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // 1. Core Target: Traditional 4:3 Landscape frame
+            const targetWidth = 1200;
+            const targetHeight = 900;
+            const targetRatio = targetWidth / targetHeight; // 4/3
 
-            // Mirror-flip transform to completely match your CSS scaleX(-1) preview look
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            // 2. Read live video dimensions (On vertical phones, vWidth might be smaller than vHeight)
+            const vWidth = video.videoWidth;
+            const vHeight = video.videoHeight;
+            const videoRatio = vWidth / vHeight;
+
+            let sx = 0,
+                sy = 0,
+                sWidth = vWidth,
+                sHeight = vHeight;
+
+            // 3. Robust bounding box calculator (Simulates object-fit: cover for ALL orientations)
+            if (videoRatio > targetRatio) {
+                // Video is wider than our 4:3 view (Standard desktop webcam behavior)
+                sWidth = vHeight * targetRatio;
+                sx = (vWidth - sWidth) / 2;
+            } else {
+                // Video is taller/narrower than our 4:3 view (Vertical phone behavior)
+                // This cuts off the top and bottom parts of the vertical feed to leave a clean 4:3 core
+                sHeight = vWidth / targetRatio;
+                sy = (vHeight - sHeight) / 2;
+            }
+
             context.save();
+            // Mirror transform matching scaleX(-1) preview
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
 
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // 4. Draw the cropped chunk
+            context.drawImage(
+                video,
+                sx,
+                sy,
+                sWidth,
+                sHeight, // Cut out the exact visible 4:3 rectangle
+                0,
+                0,
+                canvas.width,
+                canvas.height, // Map it perfectly to the canvas layout
+            );
             context.restore();
 
             const imageDataURL = canvas.toDataURL("image/png");
