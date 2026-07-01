@@ -4,37 +4,40 @@ import "./PhotoBooth.css";
 const PhotoBooth = () => {
     const [stream, setStream] = useState(null);
     const [capturedImages, setCapturedImages] = useState([]);
-    const [filter, setFilter] = useState("none");
     const [isCapturing, setIsCapturing] = useState(false);
     const [countdown, setCountdown] = useState(null);
     const [photosTaken, setPhotosTaken] = useState(0);
     const [flashActive, setFlashActive] = useState(false);
     const [stripImageUrl, setStripImageUrl] = useState(null);
+
+    // Background Color State
+    const [stripBg, setStripBg] = useState("#ffb7b2"); // Default Pink
+
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const stripCanvasRef = useRef(null);
 
-    //PRINTING MODAL
     const [showPrintModal, setShowPrintModal] = useState(false);
-    const [printTwoStrips, setPrintTwoStrips] = useState(false);
 
-    // Available filters
-    const filters = [
-        { name: "None", value: "none" },
-        { name: "Grayscale", value: "grayscale(100%)" },
-        { name: "Sepia", value: "sepia(100%)" },
-        { name: "Invert", value: "invert(100%)" },
-        { name: "Blur", value: "blur(4px)" },
+    const bgColors = [
+        { name: "Pink", hex: "#ffb7b2" },
+        { name: "Blue", hex: "#b3e5fc" },
+        { name: "Yellow", hex: "#fff9c4" },
+        { name: "Purple", hex: "#e1bee7" },
     ];
 
     // Initialize webcam
     useEffect(() => {
         const startCamera = async () => {
             try {
+                // If an active stream exists, close its tracks first to clear hardware locks
+                if (stream) {
+                    stream.getTracks().forEach((track) => track.stop());
+                }
+
                 const mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: false,
-                    mirrored: true,
                 });
                 setStream(mediaStream);
                 if (videoRef.current) {
@@ -47,7 +50,6 @@ const PhotoBooth = () => {
 
         startCamera();
 
-        // Cleanup function to stop camera when component unmounts
         return () => {
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
@@ -60,96 +62,73 @@ const PhotoBooth = () => {
         if (!isCapturing) return;
 
         if (photosTaken >= 4) {
-            // We've taken all 4 photos, stop capturing
             setIsCapturing(false);
             setCountdown(null);
             return;
         }
 
         if (countdown === null) {
-            // Start the countdown for the first or next photo
-            setCountdown(4);
+            setCountdown(3);
         }
 
         if (countdown > 0) {
-            // Continue countdown
             const timer = setTimeout(() => {
                 setCountdown(countdown - 1);
             }, 1000);
             return () => clearTimeout(timer);
         } else if (countdown === 0) {
-            // Take photo when countdown reaches 0
             capturePhoto();
             setPhotosTaken(photosTaken + 1);
-            setCountdown(photosTaken < 3 ? 4 : null); // Reset countdown if more photos needed
+            setCountdown(photosTaken < 3 ? 3 : null);
         }
     }, [isCapturing, countdown, photosTaken]);
 
-    // Create photo strip when all 4 photos are taken
+    // CRITICAL FIX: Trigger strip generation instantly whenever images OR background changes
     useEffect(() => {
         if (capturedImages.length === 4) {
             createPhotoStrip();
         }
-    }, [capturedImages]);
+    }, [capturedImages, stripBg]);
 
     // Flash effect
     useEffect(() => {
         if (flashActive) {
             const timer = setTimeout(() => {
                 setFlashActive(false);
-                console.log("flash false");
-            }, 300); // Flash duration
+            }, 250);
             return () => clearTimeout(timer);
         }
     }, [flashActive]);
 
-    // Take a photo
     const capturePhoto = () => {
         if (videoRef.current && canvasRef.current) {
-            // Activate flash effect
             setFlashActive(true);
-            console.log("flash true");
-
             const video = videoRef.current;
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // Set canvas dimensions to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
-            // Draw the video frame to the canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Apply current filter to canvas
-            if (filter !== "none") {
-                context.filter = filter;
-                context.drawImage(canvas, 0, 0);
-                context.filter = "none";
-            }
-
-            // Get the image data URL
             const imageDataURL = canvas.toDataURL("image/png");
             setCapturedImages((prev) => [...prev, imageDataURL]);
         }
     };
 
-    // Create a single vertical photo strip from all 4 photos
     const createPhotoStrip = () => {
-        if (!stripCanvasRef.current) return;
+        if (!stripCanvasRef.current || capturedImages.length !== 4) return;
 
         const canvas = stripCanvasRef.current;
         const ctx = canvas.getContext("2d");
 
-        // Determine dimensions for the strip
         const photoWidth = 300;
-        const photoHeight = 225; // 4:3 aspect ratio
+        const photoHeight = 225;
         const padding = 20;
         const margin = 20;
-        const titleHeight = 50;
+        const titleHeight = 60;
         const footerHeight = 40;
 
-        // Set canvas size for the strip (increased to prevent cutting)
         canvas.width = photoWidth + padding * 2;
         canvas.height =
             titleHeight +
@@ -158,39 +137,41 @@ const PhotoBooth = () => {
             padding * 2 +
             footerHeight;
 
-        // Create pink gradient background
-        const gradient = ctx.createLinearGradient(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-        gradient.addColorStop(0, "#ff9a9e");
-        gradient.addColorStop(1, "#fad0c4");
-        ctx.fillStyle = gradient;
+        // Clear canvas context to prevent layer bleeding
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Fill background with current live state color value
+        ctx.fillStyle = stripBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Add decorative header
-        ctx.fillStyle = "white";
-        ctx.font = "bold 24px Pacifico, cursive";
+        // Header Title
+        ctx.fillStyle =
+            stripBg === "#ffffff" || stripBg === "#e1bee7"
+                ? "#111111"
+                : "#222222";
+        ctx.font = "bold 16px Montserrat, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(
-            "ChamBeau PhotoBooth",
+            "CHAMBEAU PHOTOBOOTH",
             canvas.width / 2,
-            titleHeight / 2 + 30
+            titleHeight / 2 + 10,
         );
 
-        // Draw date at the bottom
+        // Footer Date
         const currentDate = new Date().toLocaleDateString();
-        ctx.font = "14px Montserrat, sans-serif";
+        ctx.font = "11px Montserrat, sans-serif";
+        ctx.fillStyle =
+            stripBg === "#ffffff" || stripBg === "#e1bee7"
+                ? "#555555"
+                : "#333333";
         ctx.fillText(
             currentDate,
             canvas.width / 2,
-            canvas.height - footerHeight / 2
+            canvas.height - footerHeight / 2,
         );
 
-        //load and draw each image onto the strip canvas
-        const loadImages = async () => {
+        // Async chain mapping to ensure canvas reads updated background color context
+        const loadAndDraw = async () => {
             for (let i = 0; i < capturedImages.length; i++) {
                 const img = new Image();
                 img.src = capturedImages[i];
@@ -199,147 +180,129 @@ const PhotoBooth = () => {
                         const yPos =
                             titleHeight + padding + i * (photoHeight + margin);
 
-                        //draw white border/frame
-                        ctx.fillStyle = "white";
+                        // Picture mounting border
+                        ctx.fillStyle = "#ffffff";
                         ctx.fillRect(
                             padding - 3,
                             yPos - 3,
                             photoWidth + 6,
-                            photoHeight + 6
+                            photoHeight + 6,
                         );
-
-                        // Draw the photo
                         ctx.drawImage(
                             img,
                             padding,
                             yPos,
                             photoWidth,
-                            photoHeight
+                            photoHeight,
                         );
-
                         resolve();
                     };
                 });
             }
 
-            //Generate the final strip URL
+            // Draw thin dashed cutting border guidelines inside canvas payload
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+
             setStripImageUrl(canvas.toDataURL("image/png"));
         };
 
-        loadImages();
+        loadAndDraw();
     };
 
-    // Start the auto-capture sequence
     const startAutoCapture = () => {
         setCapturedImages([]);
         setStripImageUrl(null);
         setPhotosTaken(0);
         setIsCapturing(true);
-        setCountdown(5);
+        setCountdown(3);
     };
 
-    // Reset everything and start over
-    const startOver = () => {
+    const startOver = async () => {
         setCapturedImages([]);
         setStripImageUrl(null);
         setIsCapturing(false);
         setCountdown(null);
         setPhotosTaken(0);
 
-        // Reinitialize the camera to fix white display issue
+        // Stop current track pointers to prevent lingering processes
         if (stream) {
             stream.getTracks().forEach((track) => track.stop());
         }
 
-        const startCamera = async () => {
-            try {
-                const mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: false,
-                });
-                setStream(mediaStream);
-                if (videoRef.current) {
-                    videoRef.current.srcObject = mediaStream;
-                }
-            } catch (error) {
-                console.error("Error accessing camera:", error);
+        // Re-request media device streams instantly
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: false,
+            });
+            setStream(mediaStream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
             }
-        };
-
-        startCamera();
+        } catch (error) {
+            console.error("Error restarting camera feed:", error);
+        }
     };
 
-    // Save the photo strip
     const savePhotoStrip = () => {
         if (stripImageUrl) {
             const link = document.createElement("a");
             link.href = stripImageUrl;
-            link.download = `chambeau-photostrip-${new Date().getTime()}.png`;
+            link.download = `photostrip-${new Date().getTime()}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         }
     };
-    // Print the photo strip with user choice for 1 or 2 strips
-    const printPhotoStrip = (printTwoStrips) => {
+
+    const printPhotoStrip = (twoStrips) => {
         if (stripImageUrl) {
             const printWindow = window.open("", "_blank");
-
             if (printWindow) {
                 printWindow.document.write(`
                     <html>
                         <head>
-                            <title>ChamBeau PhotoBooth Strip</title>
+                            <title>Print Strip</title>
                             <style>
-                                @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
                                 body {
                                     display: flex;
                                     justify-content: center;
                                     align-items: center;
                                     height: 100vh;
                                     margin: 0;
-                                    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+                                    background: #ffffff;
                                 }
                                 .print-container {
-                                    background: white;
-                                    padding: 20px;
-                                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-                                    border-radius: 10px;
-                                    text-align: center;
-                                    display: ${
-                                        printTwoStrips ? "flex" : "block"
-                                    };
-                                    gap: 10px;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0px;
                                 }
                                 .photo {
-                                    max-height: 85vh;
-                                    max-width: ${
-                                        printTwoStrips ? "48%" : "100%"
-                                    };
-                                    border: 8px solid white;
-                                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                                    max-height: 95vh;
+                                    object-fit: contain;
+                                    display: block;
                                 }
-                                @media print {
-                                    body { background: none; }
-                                    .print-container { box-shadow: none; padding: 0; }
+                                .divider {
+                                    border-left: 1px dashed rgba(0, 0, 0, 0.2);
+                                    height: 92vh;
+                                    margin: 0 10px;
                                 }
                             </style>
                         </head>
                         <body>
                             <div class="print-container">
                                 <img class="photo" src="${stripImageUrl}" />
-                                ${
-                                    printTwoStrips
-                                        ? `<img class="photo" src="${stripImageUrl}" />`
-                                        : ""
-                                }
+                                ${twoStrips ? `<div class="divider"></div><img class="photo" src="${stripImageUrl}" />` : ""}
                             </div>
                             <script>
                                 window.onload = function() {
                                     setTimeout(function() {
                                         window.print();
                                         window.close();
-                                    }, 500);
+                                    }, 350);
                                 };
                             </script>
                         </body>
@@ -348,18 +311,6 @@ const PhotoBooth = () => {
                 printWindow.document.close();
             }
         }
-    };
-
-    // Apply a different filter
-    const changeFilter = (newFilter) => {
-        setFilter(newFilter);
-    };
-
-    //PRINT FUNCTION
-    const handlePrint = (twoStrips) => {
-        setPrintTwoStrips(twoStrips);
-        setShowPrintModal(false);
-        printPhotoStrip(twoStrips);
     };
 
     return (
@@ -371,21 +322,16 @@ const PhotoBooth = () => {
 
             <div className="photobooth-panel">
                 {capturedImages.length < 4 ? (
-                    // Camera view and capture interface
                     <div className="camera-container">
                         <div
-                            className={`video-container ${
-                                flashActive ? "flash-active" : ""
-                            }`}
+                            className={`video-container ${flashActive ? "flash-active" : ""}`}
                         >
                             <video
                                 ref={videoRef}
-                                style={{ filter }}
                                 className="video-feed"
                                 autoPlay
                                 playsInline
                             />
-
                             {isCapturing && countdown !== null && (
                                 <div className="countdown-overlay">
                                     <div className="countdown-number">
@@ -394,22 +340,6 @@ const PhotoBooth = () => {
                                 </div>
                             )}
                         </div>
-
-                        {/* <div className="filter-buttons">
-                            {filters.map((f) => (
-                                <button
-                                    key={f.value}
-                                    onClick={() => changeFilter(f.value)}
-                                    className={`filter-button ${
-                                        filter === f.value
-                                            ? "filter-active"
-                                            : ""
-                                    }`}
-                                >
-                                    {f.name}
-                                </button>
-                            ))}
-                        </div> */}
 
                         {!isCapturing ? (
                             <button
@@ -431,14 +361,31 @@ const PhotoBooth = () => {
                         )}
                     </div>
                 ) : (
-                    // Display the photo strip
                     <div className="results-container">
+                        {/* Dynamic Background Customizer Swatches */}
+                        <div className="color-picker-container">
+                            <span className="color-picker-label">
+                                Strip Color
+                            </span>
+                            <div className="color-swatches">
+                                {bgColors.map((color) => (
+                                    <button
+                                        key={color.hex}
+                                        className={`swatch-btn ${stripBg === color.hex ? "active-swatch" : ""}`}
+                                        style={{ backgroundColor: color.hex }}
+                                        onClick={() => setStripBg(color.hex)}
+                                        title={color.name}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
                         <div className="photo-strip">
                             {stripImageUrl && (
                                 <div className="strip-container">
                                     <img
                                         src={stripImageUrl}
-                                        alt="Photo Strip"
+                                        alt="Photo Strip Output"
                                         className="strip-image"
                                     />
                                 </div>
@@ -446,12 +393,6 @@ const PhotoBooth = () => {
                         </div>
 
                         <div className="action-buttons">
-                            <button
-                                onClick={startOver}
-                                className="new-strip-button"
-                            >
-                                New Strip
-                            </button>
                             <button
                                 onClick={savePhotoStrip}
                                 className="save-button"
@@ -464,6 +405,12 @@ const PhotoBooth = () => {
                             >
                                 Print Strip
                             </button>
+                            <button
+                                onClick={startOver}
+                                className="new-strip-button"
+                            >
+                                New Strip
+                            </button>
                         </div>
                     </div>
                 )}
@@ -473,10 +420,20 @@ const PhotoBooth = () => {
                 <div className="modal-overlay">
                     <div className="modal">
                         <p>Select Print Option</p>
-                        <button onClick={() => handlePrint(false)}>
+                        <button
+                            onClick={() => {
+                                setShowPrintModal(false);
+                                printPhotoStrip(false);
+                            }}
+                        >
                             Print 1 Strip
                         </button>
-                        <button onClick={() => handlePrint(true)}>
+                        <button
+                            onClick={() => {
+                                setShowPrintModal(false);
+                                printPhotoStrip(true);
+                            }}
+                        >
                             Print 2 Strips
                         </button>
                         <button onClick={() => setShowPrintModal(false)}>
@@ -486,10 +443,7 @@ const PhotoBooth = () => {
                 </div>
             )}
 
-            {/* Hidden canvas used for capturing photos */}
             <canvas ref={canvasRef} className="hidden-canvas" />
-
-            {/* Hidden canvas for creating the photo strip */}
             <canvas ref={stripCanvasRef} className="hidden-canvas" />
         </div>
     );
