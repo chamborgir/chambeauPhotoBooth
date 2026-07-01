@@ -118,52 +118,61 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // 1. Core Target: Traditional 4:3 Landscape frame
+            // 1. Core Target: Enforce traditional 4:3 Landscape frame dimensions
             const targetWidth = 1200;
             const targetHeight = 900;
-            const targetRatio = targetWidth / targetHeight; // 4/3
+            const targetRatio = targetWidth / targetHeight; // 1.333
 
             canvas.width = targetWidth;
             canvas.height = targetHeight;
 
-            // 2. Read live video dimensions (On vertical phones, vWidth might be smaller than vHeight)
+            // 2. Read runtime camera stream dimensions
             const vWidth = video.videoWidth;
             const vHeight = video.videoHeight;
-            const videoRatio = vWidth / vHeight;
 
             let sx = 0,
                 sy = 0,
                 sWidth = vWidth,
                 sHeight = vHeight;
 
-            // 3. Robust bounding box calculator (Simulates object-fit: cover for ALL orientations)
-            if (videoRatio > targetRatio) {
-                // Video is wider than our 4:3 view (Standard desktop webcam behavior)
-                sWidth = vHeight * targetRatio;
-                sx = (vWidth - sWidth) / 2;
-            } else {
-                // Video is taller/narrower than our 4:3 view (Vertical phone behavior)
-                // This cuts off the top and bottom parts of the vertical feed to leave a clean 4:3 core
+            // 3. Check if phone is upright (Portrait hardware video stream track)
+            if (vHeight > vWidth) {
+                // The camera is tall, but we need a wide 4:3 box out of its middle view.
+                // We use the full width available, and clip the height to match a 4:3 ratio.
                 sHeight = vWidth / targetRatio;
+                sWidth = vWidth;
+
+                // Center the clip vertically along the portrait camera sensor axis
                 sy = (vHeight - sHeight) / 2;
+                sx = 0;
+            } else {
+                // Standard landscape stream track behavior (PC webcams / turned phone)
+                const videoRatio = vWidth / vHeight;
+                if (videoRatio > targetRatio) {
+                    sWidth = vHeight * targetRatio;
+                    sx = (vWidth - sWidth) / 2;
+                } else {
+                    sHeight = vWidth / targetRatio;
+                    sy = (vHeight - sHeight) / 2;
+                }
             }
 
             context.save();
-            // Mirror transform matching scaleX(-1) preview
+            // Move matrix cursor to handle horizontal mirroring seamlessly
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
 
-            // 4. Draw the cropped chunk
+            // 4. Render the perfectly proportioned landscape frame clip
             context.drawImage(
                 video,
                 sx,
                 sy,
                 sWidth,
-                sHeight, // Cut out the exact visible 4:3 rectangle
+                sHeight, // Perfect non-distorted clip bounding box
                 0,
                 0,
                 canvas.width,
-                canvas.height, // Map it perfectly to the canvas layout
+                canvas.height, // Map clean to 1200x900 canvas targets
             );
             context.restore();
 
