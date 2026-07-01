@@ -9,7 +9,7 @@ const PhotoBooth = () => {
     const [photosTaken, setPhotosTaken] = useState(0);
     const [flashActive, setFlashActive] = useState(false);
     const [stripImageUrl, setStripImageUrl] = useState(null);
-    const [videoAspectRatio, setVideoAspectRatio] = useState(4 / 3); // Track camera ratio dynamically
+    const [videoAspectRatio] = useState(4 / 3);
 
     // Background Color State
     const [stripBg, setStripBg] = useState("#ffb7b2"); // Default Pink
@@ -58,15 +58,7 @@ const PhotoBooth = () => {
     }, []);
 
     // Track dynamic video metadata sizes
-    const handleVideoMetadata = () => {
-        if (videoRef.current) {
-            const width = videoRef.current.videoWidth;
-            const height = videoRef.current.videoHeight;
-            if (width && height) {
-                setVideoAspectRatio(width / height);
-            }
-        }
-    };
+    const handleVideoMetadata = () => {};
 
     // Manage the photo capture sequence
     useEffect(() => {
@@ -118,22 +110,64 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // 1. CAPTURE THE VIEWPORT: Use the exact layout size displayed on your screen
-            const displayWidth = video.clientWidth;
-            const displayHeight = video.clientHeight;
+            // 1. Force the canvas to be a high-resolution, pixel-perfect 4:3 Landscape block (1200x900)
+            const targetWidth = 1200;
+            const targetHeight = 900;
+            const targetRatio = targetWidth / targetHeight; // 4/3
 
-            // Set the canvas to match the exact dimensions of your CSS preview box
-            canvas.width = displayWidth;
-            canvas.height = displayHeight;
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            // 2. Read the absolute raw hardware sizes streaming from the device sensor
+            const vWidth = video.videoWidth;
+            const vHeight = video.videoHeight;
+
+            let sx = 0,
+                sy = 0,
+                sWidth = vWidth,
+                sHeight = vHeight;
+
+            // 3. CORE SAFARI FIX: Determine if the phone is delivering a tall vertical video stream track
+            if (vHeight > vWidth) {
+                // Mobile Safari in Portrait mode: the track is vertical (e.g. 480x640 or 1080x1920)
+                // To get a perfect horizontal 4:3 crop, we use the full width and clip the excess height
+                sWidth = vWidth;
+                sHeight = vWidth / targetRatio;
+
+                // Center the cropping frame vertically along the sensor axis
+                sy = (vHeight - sHeight) / 2;
+                sx = 0;
+            } else {
+                // Desktop webcams or Phone held sideways in Landscape mode: the track is horizontal (e.g. 640x480)
+                const videoRatio = vWidth / vHeight;
+                if (videoRatio > targetRatio) {
+                    // Video is wider than 4:3 (like a 16:9 webcam) -> Crop the left and right margins
+                    sWidth = vHeight * targetRatio;
+                    sx = (vWidth - sWidth) / 2;
+                } else {
+                    // Video is taller than 4:3 -> Crop the top and bottom margins
+                    sHeight = vWidth / targetRatio;
+                    sy = (vHeight - sHeight) / 2;
+                }
+            }
 
             context.save();
-            // 2. Mirror-flip transform to match the live viewfinder orientation
+            // 4. Mirror-flip the transformation matrix horizontally to perfectly replicate your viewfinder preview layout
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
 
-            // 3. Directly draw what is visible in the HTML element container box
-            // This forces the browser to match its internal layout engine instead of raw hardware metadata
-            context.drawImage(video, 0, 0, displayWidth, displayHeight);
+            // 5. Slice out the non-distorted center block and draw it perfectly flat onto the canvas
+            context.drawImage(
+                video,
+                sx,
+                sy,
+                sWidth,
+                sHeight, // Source clip bounding box coordinates
+                0,
+                0,
+                canvas.width,
+                canvas.height, // Target frame dimension mapping
+            );
             context.restore();
 
             const imageDataURL = canvas.toDataURL("image/png");
