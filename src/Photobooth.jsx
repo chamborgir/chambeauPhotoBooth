@@ -203,11 +203,7 @@ const PhotoBooth = () => {
                 : "#222222";
         ctx.font = "bold 16px Montserrat, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(
-            "CHAMBEAU PHOTOBOOTH",
-            canvas.width / 2,
-            titleHeight / 2 + 10,
-        );
+        ctx.fillText("", canvas.width / 2, titleHeight / 2 + 10);
 
         // Footer Date
         const currentDate = new Date().toLocaleDateString();
