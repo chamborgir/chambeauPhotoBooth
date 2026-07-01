@@ -110,67 +110,60 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // 1. Force the canvas to be a high-resolution, pixel-perfect 4:3 Landscape block (1200x900)
-            const targetWidth = 1200;
-            const targetHeight = 900;
-            const targetRatio = targetWidth / targetHeight; // 4/3
-
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
-
-            // 2. Read the absolute raw hardware sizes streaming from the device sensor
+            // STEP 1: Capture the raw camera track at its exact native size (no scaling)
             const vWidth = video.videoWidth;
             const vHeight = video.videoHeight;
 
-            let sx = 0,
-                sy = 0,
-                sWidth = vWidth,
-                sHeight = vHeight;
-
-            // 3. CORE SAFARI FIX: Determine if the phone is delivering a tall vertical video stream track
-            if (vHeight > vWidth) {
-                // Mobile Safari in Portrait mode: the track is vertical (e.g. 480x640 or 1080x1920)
-                // To get a perfect horizontal 4:3 crop, we use the full width and clip the excess height
-                sWidth = vWidth;
-                sHeight = vWidth / targetRatio;
-
-                // Center the cropping frame vertically along the sensor axis
-                sy = (vHeight - sHeight) / 2;
-                sx = 0;
-            } else {
-                // Desktop webcams or Phone held sideways in Landscape mode: the track is horizontal (e.g. 640x480)
-                const videoRatio = vWidth / vHeight;
-                if (videoRatio > targetRatio) {
-                    // Video is wider than 4:3 (like a 16:9 webcam) -> Crop the left and right margins
-                    sWidth = vHeight * targetRatio;
-                    sx = (vWidth - sWidth) / 2;
-                } else {
-                    // Video is taller than 4:3 -> Crop the top and bottom margins
-                    sHeight = vWidth / targetRatio;
-                    sy = (vHeight - sHeight) / 2;
-                }
-            }
+            canvas.width = vWidth;
+            canvas.height = vHeight;
 
             context.save();
-            // 4. Mirror-flip the transformation matrix horizontally to perfectly replicate your viewfinder preview layout
+            // Mirror horizontally to match the live viewport preview
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
 
-            // 5. Slice out the non-distorted center block and draw it perfectly flat onto the canvas
-            context.drawImage(
-                video,
-                sx,
-                sy,
-                sWidth,
-                sHeight, // Source clip bounding box coordinates
-                0,
-                0,
-                canvas.width,
-                canvas.height, // Target frame dimension mapping
-            );
+            // Draw 1:1 onto the temporary canvas
+            context.drawImage(video, 0, 0, vWidth, vHeight);
             context.restore();
 
-            const imageDataURL = canvas.toDataURL("image/png");
+            // STEP 2: Crop a perfect 4:3 landscape slice out of the static image data
+            const targetRatio = 4 / 3;
+            let cropWidth = vWidth;
+            let cropHeight = vHeight;
+            let cropX = 0;
+            let cropY = 0;
+
+            const currentRatio = vWidth / vHeight;
+            if (currentRatio > targetRatio) {
+                // Stream is wider than 4:3 (e.g., standard 16:9 landscape webcam)
+                cropWidth = vHeight * targetRatio;
+                cropX = (vWidth - cropWidth) / 2;
+            } else {
+                // Stream is taller than 4:3 (e.g., vertical portrait phone camera)
+                cropHeight = vWidth / targetRatio;
+                cropY = (vHeight - cropHeight) / 2;
+            }
+
+            // Create a high-resolution 4:3 destination canvas element
+            const cropCanvas = document.createElement("canvas");
+            cropCanvas.width = 1200;
+            cropCanvas.height = 900;
+            const cropCtx = cropCanvas.getContext("2d");
+
+            // Slice the center out of our first canvas and draw it into the final 4:3 box
+            cropCtx.drawImage(
+                canvas,
+                cropX,
+                cropY,
+                cropWidth,
+                cropHeight, // Source slice coordinates
+                0,
+                0,
+                1200,
+                900, // Destination scale
+            );
+
+            const imageDataURL = cropCanvas.toDataURL("image/png");
             setCapturedImages((prev) => [...prev, imageDataURL]);
         }
     };
