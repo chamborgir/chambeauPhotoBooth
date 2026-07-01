@@ -118,63 +118,22 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // 1. Force absolute target dimensions for a crisp, traditional 4:3 landscape shot
-            const targetWidth = 1200;
-            const targetHeight = 900;
-            const targetRatio = targetWidth / targetHeight; // 1.3333
+            // 1. CAPTURE THE VIEWPORT: Use the exact layout size displayed on your screen
+            const displayWidth = video.clientWidth;
+            const displayHeight = video.clientHeight;
 
-            canvas.width = targetWidth;
-            canvas.height = targetHeight;
-
-            // 2. Fetch the video element's natural track sizing
-            let vWidth = video.videoWidth;
-            let vHeight = video.videoHeight;
-
-            // SAFARI PORTRAIT BUG FIX: Detect if Safari has flipped the axis tags
-            // (Even if the container is landscape, Safari reports portrait tracking dimensions)
-            const isSafariPortraitMismatched = vHeight > vWidth;
-
-            let sx = 0,
-                sy = 0,
-                sWidth = vWidth,
-                sHeight = vHeight;
-
-            if (isSafariPortraitMismatched) {
-                // iOS Safari treats the frame as vertically standing.
-                // To get a true 4:3 center crop out of a pre-rotated stream:
-                sWidth = vWidth;
-                sHeight = vWidth / targetRatio; // Compute the proper 4:3 slice height
-                sy = (vHeight - sHeight) / 2; // Center along Safari's vertical sensor track
-                sx = 0;
-            } else {
-                // Standard desktop/widescreen mode math tracking
-                const videoRatio = vWidth / vHeight;
-                if (videoRatio > targetRatio) {
-                    sWidth = vHeight * targetRatio;
-                    sx = (vWidth - sWidth) / 2;
-                } else {
-                    sHeight = vWidth / targetRatio;
-                    sy = (vHeight - sHeight) / 2;
-                }
-            }
+            // Set the canvas to match the exact dimensions of your CSS preview box
+            canvas.width = displayWidth;
+            canvas.height = displayHeight;
 
             context.save();
-            // 3. Mirror the canvas horizontally to perfectly mirror your preview window frame
+            // 2. Mirror-flip transform to match the live viewfinder orientation
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
 
-            // 4. Paint the canvas using the clean non-squeezed bounding coordinate sets
-            context.drawImage(
-                video,
-                sx,
-                sy,
-                sWidth,
-                sHeight, // Cut clean 4:3 slice out of raw track matrix
-                0,
-                0,
-                canvas.width,
-                canvas.height, // Map evenly to the 1200x900 grid bounds
-            );
+            // 3. Directly draw what is visible in the HTML element container box
+            // This forces the browser to match its internal layout engine instead of raw hardware metadata
+            context.drawImage(video, 0, 0, displayWidth, displayHeight);
             context.restore();
 
             const imageDataURL = canvas.toDataURL("image/png");
@@ -191,7 +150,6 @@ const PhotoBooth = () => {
         // Maintain structural layout width, compute height dynamically to protect aspect ratio
         const photoWidth = 300;
         const photoHeight = photoWidth / videoAspectRatio;
-
         const padding = 20;
         const margin = 20;
         const titleHeight = 60;
