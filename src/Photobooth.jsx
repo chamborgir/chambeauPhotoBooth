@@ -118,35 +118,36 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
-            // 1. Core Target: Enforce traditional 4:3 Landscape frame dimensions
+            // 1. Force absolute target dimensions for a crisp, traditional 4:3 landscape shot
             const targetWidth = 1200;
             const targetHeight = 900;
-            const targetRatio = targetWidth / targetHeight; // 1.333
+            const targetRatio = targetWidth / targetHeight; // 1.3333
 
             canvas.width = targetWidth;
             canvas.height = targetHeight;
 
-            // 2. Read runtime camera stream dimensions
-            const vWidth = video.videoWidth;
-            const vHeight = video.videoHeight;
+            // 2. Fetch the video element's natural track sizing
+            let vWidth = video.videoWidth;
+            let vHeight = video.videoHeight;
+
+            // SAFARI PORTRAIT BUG FIX: Detect if Safari has flipped the axis tags
+            // (Even if the container is landscape, Safari reports portrait tracking dimensions)
+            const isSafariPortraitMismatched = vHeight > vWidth;
 
             let sx = 0,
                 sy = 0,
                 sWidth = vWidth,
                 sHeight = vHeight;
 
-            // 3. Check if phone is upright (Portrait hardware video stream track)
-            if (vHeight > vWidth) {
-                // The camera is tall, but we need a wide 4:3 box out of its middle view.
-                // We use the full width available, and clip the height to match a 4:3 ratio.
-                sHeight = vWidth / targetRatio;
+            if (isSafariPortraitMismatched) {
+                // iOS Safari treats the frame as vertically standing.
+                // To get a true 4:3 center crop out of a pre-rotated stream:
                 sWidth = vWidth;
-
-                // Center the clip vertically along the portrait camera sensor axis
-                sy = (vHeight - sHeight) / 2;
+                sHeight = vWidth / targetRatio; // Compute the proper 4:3 slice height
+                sy = (vHeight - sHeight) / 2; // Center along Safari's vertical sensor track
                 sx = 0;
             } else {
-                // Standard landscape stream track behavior (PC webcams / turned phone)
+                // Standard desktop/widescreen mode math tracking
                 const videoRatio = vWidth / vHeight;
                 if (videoRatio > targetRatio) {
                     sWidth = vHeight * targetRatio;
@@ -158,21 +159,21 @@ const PhotoBooth = () => {
             }
 
             context.save();
-            // Move matrix cursor to handle horizontal mirroring seamlessly
+            // 3. Mirror the canvas horizontally to perfectly mirror your preview window frame
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
 
-            // 4. Render the perfectly proportioned landscape frame clip
+            // 4. Paint the canvas using the clean non-squeezed bounding coordinate sets
             context.drawImage(
                 video,
                 sx,
                 sy,
                 sWidth,
-                sHeight, // Perfect non-distorted clip bounding box
+                sHeight, // Cut clean 4:3 slice out of raw track matrix
                 0,
                 0,
                 canvas.width,
-                canvas.height, // Map clean to 1200x900 canvas targets
+                canvas.height, // Map evenly to the 1200x900 grid bounds
             );
             context.restore();
 

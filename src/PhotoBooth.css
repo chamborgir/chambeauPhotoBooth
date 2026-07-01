@@ -241,12 +241,10 @@ html, body {
 }
 
 .strip-image {
-  width: 100%;
-  height: auto;          /* FORCES the height to scale naturally based on width */
+  width: 100% !important;
+  height: auto !important; /* Forces Safari to compute vertical layout via natural scaling */
   display: block;
-  object-fit: contain;   /* Prevents arbitrary squeezing or stretching */
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  object-fit: contain;
 }
 
 .action-buttons {
