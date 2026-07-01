@@ -9,6 +9,7 @@ const PhotoBooth = () => {
     const [photosTaken, setPhotosTaken] = useState(0);
     const [flashActive, setFlashActive] = useState(false);
     const [stripImageUrl, setStripImageUrl] = useState(null);
+    const [videoAspectRatio, setVideoAspectRatio] = useState(4 / 3); // Track camera ratio dynamically
 
     // Background Color State
     const [stripBg, setStripBg] = useState("#ffb7b2"); // Default Pink
@@ -30,7 +31,6 @@ const PhotoBooth = () => {
     useEffect(() => {
         const startCamera = async () => {
             try {
-                // If an active stream exists, close its tracks first to clear hardware locks
                 if (stream) {
                     stream.getTracks().forEach((track) => track.stop());
                 }
@@ -56,6 +56,17 @@ const PhotoBooth = () => {
             }
         };
     }, []);
+
+    // Track dynamic video metadata sizes
+    const handleVideoMetadata = () => {
+        if (videoRef.current) {
+            const width = videoRef.current.videoWidth;
+            const height = videoRef.current.videoHeight;
+            if (width && height) {
+                setVideoAspectRatio(width / height);
+            }
+        }
+    };
 
     // Manage the photo capture sequence
     useEffect(() => {
@@ -83,7 +94,7 @@ const PhotoBooth = () => {
         }
     }, [isCapturing, countdown, photosTaken]);
 
-    // CRITICAL FIX: Trigger strip generation instantly whenever images OR background changes
+    // Trigger strip generation instantly whenever images OR background changes
     useEffect(() => {
         if (capturedImages.length === 4) {
             createPhotoStrip();
@@ -107,9 +118,17 @@ const PhotoBooth = () => {
             const canvas = canvasRef.current;
             const context = canvas.getContext("2d");
 
+            // Set canvas template size strictly to raw camera inputs
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+
+            // Mirror-flip transform to completely match your CSS scaleX(-1) preview look
+            context.save();
+            context.translate(canvas.width, 0);
+            context.scale(-1, 1);
+
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            context.restore();
 
             const imageDataURL = canvas.toDataURL("image/png");
             setCapturedImages((prev) => [...prev, imageDataURL]);
@@ -122,8 +141,10 @@ const PhotoBooth = () => {
         const canvas = stripCanvasRef.current;
         const ctx = canvas.getContext("2d");
 
+        // Maintain structural layout width, compute height dynamically to protect aspect ratio
         const photoWidth = 300;
-        const photoHeight = 225;
+        const photoHeight = photoWidth / videoAspectRatio;
+
         const padding = 20;
         const margin = 20;
         const titleHeight = 60;
@@ -137,10 +158,9 @@ const PhotoBooth = () => {
             padding * 2 +
             footerHeight;
 
-        // Clear canvas context to prevent layer bleeding
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Fill background with current live state color value
+        // Fill background
         ctx.fillStyle = stripBg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -170,7 +190,6 @@ const PhotoBooth = () => {
             canvas.height - footerHeight / 2,
         );
 
-        // Async chain mapping to ensure canvas reads updated background color context
         const loadAndDraw = async () => {
             for (let i = 0; i < capturedImages.length; i++) {
                 const img = new Image();
@@ -180,7 +199,7 @@ const PhotoBooth = () => {
                         const yPos =
                             titleHeight + padding + i * (photoHeight + margin);
 
-                        // Picture mounting border
+                        // Photo Mounting Border
                         ctx.fillStyle = "#ffffff";
                         ctx.fillRect(
                             padding - 3,
@@ -188,6 +207,8 @@ const PhotoBooth = () => {
                             photoWidth + 6,
                             photoHeight + 6,
                         );
+
+                        // Drawn image retains true camera ratio
                         ctx.drawImage(
                             img,
                             padding,
@@ -200,7 +221,7 @@ const PhotoBooth = () => {
                 });
             }
 
-            // Draw thin dashed cutting border guidelines inside canvas payload
+            // Outer cutting guidelines
             ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
             ctx.lineWidth = 1;
             ctx.setLineDash([4, 4]);
@@ -227,12 +248,10 @@ const PhotoBooth = () => {
         setCountdown(null);
         setPhotosTaken(0);
 
-        // Stop current track pointers to prevent lingering processes
         if (stream) {
             stream.getTracks().forEach((track) => track.stop());
         }
 
-        // Re-request media device streams instantly
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({
                 video: true,
@@ -331,6 +350,7 @@ const PhotoBooth = () => {
                                 className="video-feed"
                                 autoPlay
                                 playsInline
+                                onLoadedMetadata={handleVideoMetadata}
                             />
                             {isCapturing && countdown !== null && (
                                 <div className="countdown-overlay">
@@ -362,7 +382,6 @@ const PhotoBooth = () => {
                     </div>
                 ) : (
                     <div className="results-container">
-                        {/* Dynamic Background Customizer Swatches */}
                         <div className="color-picker-container">
                             <span className="color-picker-label">
                                 Strip Color
